@@ -26,7 +26,8 @@ fn main() {
     loop {
         match input!("w or r: ").as_str() {
             "w" => {
-                radio.transmit(b"test").expect("transmit error");
+                let msg = input!("Enter msg: ");
+                radio.transmit(msg.as_bytes()).expect("transmit error");
             },
             "r" => {
                 let packet = radio.get_packet().expect("Recieve Error");

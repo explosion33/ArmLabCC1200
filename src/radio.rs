@@ -1,12 +1,17 @@
 use std::{time::Duration, thread};
 use rppal::i2c::I2c;
 
+const IDENT_MSG: &str = "ArmLabCC1200";
+const ADDR: u16 = 0x34;
+const BACKUP_ADDR: u16 = 0x35;
 
 #[derive(Debug)]
 pub enum RadioError {
     I2CInitError,
+    DeviceDetectError,
     TransmitMsgLen,
     TransmitMsg,
+    TransmitError,
     RecieveCmd,
     RecieveReadLen,
     RecieveReadMsg,
@@ -17,12 +22,12 @@ pub enum RadioError {
 
 
 pub struct Radio {
-    i2c: I2c,
+    pub i2c: I2c,
     packet_wait_delay: u64,
     
 }
 
-
+#[allow(dead_code)]
 impl Radio {
     pub fn new() -> Result<Radio, RadioError> {
         let mut i2c = match I2c::new() {
@@ -32,9 +37,24 @@ impl Radio {
             }
         };
 
-        match i2c.set_slave_address(0x34) {
+        // set device address
+        match i2c.set_slave_address(ADDR) {
             Ok(_) => {},
             Err(_) => {return Err(RadioError::I2CInitError)},   
+        }
+
+        // check if device is on address
+        // if its not attempt for backup address
+        if !Radio::check_for_device(&mut i2c) {
+
+            match i2c.set_slave_address(BACKUP_ADDR) {
+                Ok(_) => {},
+                Err(_) => {return Err(RadioError::I2CInitError)},   
+            }
+            
+            if !Radio::check_for_device(&mut i2c) {
+                return Err(RadioError::DeviceDetectError);
+            }
         }
 
         Ok(Radio { i2c, packet_wait_delay: 10 })
@@ -57,14 +77,14 @@ impl Radio {
             return Err(RadioError::InvalidArgument);
         }
 
-        let mut buf: [u8; 2] = [0x01, 0x00];
+        let mut buf: [u8; 5] = [0x01, 0x00, 0x00, 0x00, 0x00];
         buf[1] = msg.len() as u8;
 
 
         // transmit "transmit" signal 0x01 and number of bytes to expect
         match self.i2c.write(&buf) {
             Ok(_) => {},
-            Err(n) => {
+            Err(_) => {
                 return Err(RadioError::TransmitMsgLen);
             },
         };
@@ -72,7 +92,7 @@ impl Radio {
         // transmit message
         match self.i2c.write(&msg) {
             Ok(_) => {},
-            Err(n) => {
+            Err(_) => {
                 return Err(RadioError::TransmitMsg);
             },
         }
@@ -82,7 +102,7 @@ impl Radio {
 
     pub fn get_packet(&mut self) -> Result<Vec<u8>, RadioError> {
         // send read command
-        let msg: [u8; 2] = [0x02, 0x00];
+        let msg: [u8; 5] = [0x02, 0x00, 0x00, 0x00, 0x00];
         match self.i2c.write(&msg) {
             Ok(_) => {},
             Err(_) => {
@@ -124,7 +144,7 @@ impl Radio {
                     return Err(RadioError::ReadLengthMismatch);
                 }
             },
-            Err(n) => {
+            Err(_) => {
                 return Err(RadioError::RecieveReadMsg);
             },
         };
@@ -134,4 +154,46 @@ impl Radio {
 
         Ok(out)
     }
+
+    pub fn set_frequency(&mut self, freq: f32) -> Result<(), RadioError> {
+        let bytes = freq.to_ne_bytes();
+        let mut buf: [u8; 5] = [0x03, 0x00, 0x00, 0x00, 0x00];
+        buf[1] = bytes[0];
+        buf[2] = bytes[1];
+        buf[3] = bytes[2];
+        buf[4] = bytes[3];
+
+        // transmit "transmit" signal 0x01 and number of bytes to expect
+        match self.i2c.write(&buf) {
+            Ok(_) => {},
+            Err(_) => {
+                return Err(RadioError::TransmitError);
+            },
+        };
+
+        return Ok(());
+    }
+
+    fn check_for_device(i2c: &mut I2c) -> bool {
+        let mut buf: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
+        match i2c.read(&mut buf) {
+            Ok(n) => {
+                if n != IDENT_MSG.len() {
+                    println!("read length mismatch expected {} byte, read {}", IDENT_MSG.len(), n);
+                    return false;
+                }
+            },
+            Err(_) => {
+                return false;
+            },
+        };
+
+        return buf == IDENT_MSG.as_bytes();
+    }
+
+    pub fn is_device_available(&mut self) -> bool{
+        return Radio::check_for_device(&mut self.i2c);
+    }
+
+
 }
