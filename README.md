@@ -7,6 +7,7 @@ Libraries for interfacring with Armstrong Labs CC1200 based radios
 
 ## Whats Coming
 * More exposed features on the radio
+* STM32 source code
 * SPI Interfacing options
 * Rust Library on crates.io
 * Platform independent library for Rust
