@@ -174,6 +174,26 @@ impl Radio {
         return Ok(());
     }
 
+    pub fn set_power(&mut self, power: f32) -> Result<(), RadioError> {
+        let bytes = power.to_ne_bytes();
+        let mut buf: [u8; 5] = [0x04, 0x00, 0x00, 0x00, 0x00];
+        buf[1] = bytes[0];
+        buf[2] = bytes[1];
+        buf[3] = bytes[2];
+        buf[4] = bytes[3];
+
+        // transmit "transmit" signal 0x01 and number of bytes to expect
+        match self.i2c.write(&buf) {
+            Ok(_) => {},
+            Err(_) => {
+                return Err(RadioError::TransmitError);
+            },
+        };
+
+        return Ok(());
+    }
+
+
     fn check_for_device(i2c: &mut I2c) -> bool {
         let mut buf: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
         match i2c.read(&mut buf) {
