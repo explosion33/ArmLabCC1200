@@ -1,9 +1,21 @@
+#![allow(dead_code)]
+
 use std::{time::Duration, thread};
 use rppal::i2c::I2c;
 
 const IDENT_MSG: &str = "ArmLabCC1200";
 const ADDR: u16 = 0x34;
 const BACKUP_ADDR: u16 = 0x35;
+
+
+
+pub enum ModulationFormat {
+    FSK2 = 0x0,
+    GFSK2 = 0x1,
+    ASK = 0x3,
+    FSK4 = 0x4,
+    GFSK4 = 0x5,
+}
 
 #[derive(Debug)]
 pub enum RadioError {
@@ -19,16 +31,14 @@ pub enum RadioError {
     InvalidArgument,
 }
 
-
-
 pub struct Radio {
     pub i2c: I2c,
     packet_wait_delay: u64,
     
 }
 
-#[allow(dead_code)]
-impl Radio {
+// initialize functions
+impl Radio {    
     pub fn new() -> Result<Radio, RadioError> {
         let mut i2c = match I2c::new() {
             Ok(n) => {n},
@@ -71,6 +81,32 @@ impl Radio {
         self.packet_wait_delay = delay;
     }
 
+    fn check_for_device(i2c: &mut I2c) -> bool {
+        let mut buf: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
+        match i2c.read(&mut buf) {
+            Ok(n) => {
+                if n != IDENT_MSG.len() {
+                    println!("read length mismatch expected {} byte, read {}", IDENT_MSG.len(), n);
+                    return false;
+                }
+            },
+            Err(_) => {
+                return false;
+            },
+        };
+
+        return buf == IDENT_MSG.as_bytes();
+    }
+
+    pub fn is_device_available(&mut self) -> bool{
+        return Radio::check_for_device(&mut self.i2c);
+    }
+
+
+}
+
+// transmit / recieve
+impl Radio {
     pub fn transmit(&mut self, msg: &[u8]) -> Result<(), RadioError> {
 
         if msg.len() > u8::MAX as usize {
@@ -155,15 +191,18 @@ impl Radio {
         Ok(out)
     }
 
-    pub fn set_frequency(&mut self, freq: f32) -> Result<(), RadioError> {
-        let bytes = freq.to_ne_bytes();
-        let mut buf: [u8; 5] = [0x03, 0x00, 0x00, 0x00, 0x00];
+}
+
+// change radio settings
+impl Radio {
+    fn set_float_val(&mut self, cmd: u8, val: f32) -> Result<(), RadioError> {
+        let bytes = val.to_ne_bytes();
+        let mut buf: [u8; 5] = [cmd, 0x00, 0x00, 0x00, 0x00];
         buf[1] = bytes[0];
         buf[2] = bytes[1];
         buf[3] = bytes[2];
         buf[4] = bytes[3];
 
-        // transmit "transmit" signal 0x01 and number of bytes to expect
         match self.i2c.write(&buf) {
             Ok(_) => {},
             Err(_) => {
@@ -172,17 +211,31 @@ impl Radio {
         };
 
         return Ok(());
+    }
+
+    pub fn set_frequency(&mut self, frequency: f32) -> Result<(), RadioError> {
+        return self.set_float_val(0x03, frequency);
     }
 
     pub fn set_power(&mut self, power: f32) -> Result<(), RadioError> {
-        let bytes = power.to_ne_bytes();
-        let mut buf: [u8; 5] = [0x04, 0x00, 0x00, 0x00, 0x00];
-        buf[1] = bytes[0];
-        buf[2] = bytes[1];
-        buf[3] = bytes[2];
-        buf[4] = bytes[3];
+        return self.set_float_val(0x04, power);
+    }
 
-        // transmit "transmit" signal 0x01 and number of bytes to expect
+    pub fn set_deviation(&mut self, deviation: f32) -> Result<(), RadioError> {
+        return self.set_float_val(0x05, deviation);
+    }
+
+    pub fn set_symbol_rate(&mut self, symbol_rate: f32) -> Result<(), RadioError> {
+        return self.set_float_val(0x06, symbol_rate);
+    }
+
+    pub fn set_rx_filter(&mut self, rx_filter: f32) -> Result<(), RadioError> {
+        return self.set_float_val(0x07, rx_filter);
+    }
+
+    pub fn set_modulation(&mut self, mode: ModulationFormat) -> Result<(), RadioError> {
+        let buf: [u8; 5] = [0x08, mode as u8, 0x00, 0x00, 0x00];
+
         match self.i2c.write(&buf) {
             Ok(_) => {},
             Err(_) => {
@@ -192,28 +245,5 @@ impl Radio {
 
         return Ok(());
     }
-
-
-    fn check_for_device(i2c: &mut I2c) -> bool {
-        let mut buf: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
-        match i2c.read(&mut buf) {
-            Ok(n) => {
-                if n != IDENT_MSG.len() {
-                    println!("read length mismatch expected {} byte, read {}", IDENT_MSG.len(), n);
-                    return false;
-                }
-            },
-            Err(_) => {
-                return false;
-            },
-        };
-
-        return buf == IDENT_MSG.as_bytes();
-    }
-
-    pub fn is_device_available(&mut self) -> bool{
-        return Radio::check_for_device(&mut self.i2c);
-    }
-
-
 }
+
