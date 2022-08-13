@@ -1,12 +1,12 @@
 #![allow(dead_code)]
 
 use std::{time::Duration, thread};
-use rppal::i2c::I2c;
+use i2cdev::core::*;
+use i2cdev::linux::LinuxI2CDevice as I2c;
 
 const IDENT_MSG: &str = "ArmLabCC1200";
 const ADDR: u16 = 0x34;
 const BACKUP_ADDR: u16 = 0x35;
-
 
 
 pub enum ModulationFormat {
@@ -31,37 +31,30 @@ pub enum RadioError {
     InvalidArgument,
 }
 
+
 pub struct Radio {
     pub i2c: I2c,
     packet_wait_delay: u64,
     
 }
 
-// initialize functions
 impl Radio {    
-    pub fn new() -> Result<Radio, RadioError> {
-        let mut i2c = match I2c::new() {
+    pub fn new(i2c_path: &str) -> Result<Radio, RadioError> {
+        let mut i2c = match I2c::new(i2c_path, ADDR) {
             Ok(n) => {n},
             Err(_) => {
-                return Err(RadioError::I2CInitError);
+                return Err(RadioError::I2CInitError);                
             }
         };
 
-        // set device address
-        match i2c.set_slave_address(ADDR) {
-            Ok(_) => {},
-            Err(_) => {return Err(RadioError::I2CInitError)},   
-        }
-
-        // check if device is on address
-        // if its not attempt for backup address
         if !Radio::check_for_device(&mut i2c) {
+            i2c = match I2c::new(i2c_path, BACKUP_ADDR) {
+                Ok(n) => n,
+                Err(_) => {
+                    return Err(RadioError::I2CInitError);   
+                }
+            };
 
-            match i2c.set_slave_address(BACKUP_ADDR) {
-                Ok(_) => {},
-                Err(_) => {return Err(RadioError::I2CInitError)},   
-            }
-            
             if !Radio::check_for_device(&mut i2c) {
                 return Err(RadioError::DeviceDetectError);
             }
@@ -70,11 +63,19 @@ impl Radio {
         Ok(Radio { i2c, packet_wait_delay: 10 })
     }
 
+    pub fn new_rpi() -> Result<Radio, RadioError> {
+        return Radio::new("/dev/i2c-1")
+    }
+
     pub fn use_alt_address(&mut self, address: u16) -> Result<(), RadioError> {
-        match self.i2c.set_slave_address(address) {
-            Ok(_) => {Ok(())},
-            Err(_) => {Err(RadioError::I2CInitError)},
-        }
+        self.i2c = match I2c::new("/dev/i2c-1", BACKUP_ADDR) {
+            Ok(n) => n,
+            Err(_) => {
+                return Err(RadioError::I2CInitError);
+            }
+        };
+
+        Ok(())
     }
 
     pub fn set_packet_gather_delay(&mut self, delay: u64) {
@@ -84,12 +85,7 @@ impl Radio {
     fn check_for_device(i2c: &mut I2c) -> bool {
         let mut buf: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
         match i2c.read(&mut buf) {
-            Ok(n) => {
-                if n != IDENT_MSG.len() {
-                    println!("read length mismatch expected {} byte, read {}", IDENT_MSG.len(), n);
-                    return false;
-                }
-            },
+            Ok(_) => {},
             Err(_) => {
                 return false;
             },
@@ -152,12 +148,7 @@ impl Radio {
         // read number of expected bytes
         let mut buf: [u8; 1] = [0u8; 1];
         match self.i2c.read(&mut buf) {
-            Ok(n) => {
-                if n != 1 {
-                    println!("read length mismatch expected 1 byte, read {}", n);
-                    return Err(RadioError::ReadLengthMismatch);
-                }
-            },
+            Ok(_) => {},
             Err(_) => {
                 return Err(RadioError::RecieveReadLen);
             },
@@ -174,12 +165,7 @@ impl Radio {
         let mut buf2: Box<[u8]> = vec![0; msg_size].into_boxed_slice();
 
         match self.i2c.read(&mut buf2) {
-            Ok(n) => {
-                if n != msg_size {
-                    println!("read length mismatch expected {} bytes, read {}", msg_size, n);
-                    return Err(RadioError::ReadLengthMismatch);
-                }
-            },
+            Ok(_) => {},
             Err(_) => {
                 return Err(RadioError::RecieveReadMsg);
             },
@@ -246,4 +232,3 @@ impl Radio {
         return Ok(());
     }
 }
-

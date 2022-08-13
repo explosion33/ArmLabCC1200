@@ -24,8 +24,8 @@ macro_rules! input {
 
 
 fn run_async_coms() {
-    let mut radio = Radio::new().unwrap();
-    let mut radio2 = Radio::new().unwrap();
+    let mut radio = Radio::new_rpi().unwrap();
+    let mut radio2 = Radio::new_rpi().unwrap();
 
     radio2.use_alt_address(0x35).expect("could not change address");
     if !radio2.is_device_available() {
@@ -90,7 +90,7 @@ fn run_async_coms() {
 }
 
 fn run_cmd_int() {
-    let mut radio = Radio::new().unwrap();
+    let mut radio = Radio::new_rpi().unwrap();
     loop {
         match input!("w or r: ").as_str() {
             "w" => {
@@ -113,7 +113,7 @@ fn run_cmd_int() {
 }
 
 fn tx(msg: &str, delay_ms: u64) {
-    let mut radio = Radio::new().unwrap();
+    let mut radio = Radio::new_rpi().unwrap();
     loop {
         radio.transmit(msg.as_bytes()).expect("tx failure");
 
@@ -123,17 +123,17 @@ fn tx(msg: &str, delay_ms: u64) {
 
 fn main() {
     //run_async_coms();
-    //run_cmd_int();
-    tx("test beacon msg", 100);
+    run_cmd_int();
+    //tx("test beacon msg", 100);
 
-    let mut radio = Radio::new().unwrap();
+    let mut radio = Radio::new_rpi().unwrap();
 
     //radio.set_frequency(101.1).expect("error");
     //radio.set_power(101.1).expect("error");
     //radio.set_deviation(101.1).expect("error");
     //radio.set_symbol_rate(101.1).expect("error");
     //radio.set_rx_filter(101.1).expect("error");
-    radio.set_modulation(ModulationFormat::GFSK4).expect("Error");
+    //radio.set_modulation(ModulationFormat::GFSK4).expect("Error");
 
 
 }
