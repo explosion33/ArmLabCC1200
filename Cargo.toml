@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 i2cdev = "0.3.2"
+serialport = {version = "4.0.2", default-features = false}

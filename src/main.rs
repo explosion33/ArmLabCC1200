@@ -1,5 +1,12 @@
-use crate::radio::{Radio, ModulationFormat};
-mod radio;
+#[cfg(any(linux))]
+use crate::radio_i2c::{Radio, ModulationFormat};
+#[cfg(any(linux))]
+mod radio_i2c;
+
+#[cfg(any(not(linux)))]
+use crate::radio_serial::{Radio};
+#[cfg(any(not(linux)))]
+mod radio_serial;
 
 use std::{thread, time::Duration};
 
@@ -21,8 +28,8 @@ macro_rules! input {
     }};
 }
 
-
-
+// linux i2c examples
+#[cfg(any(linux))]
 fn run_async_coms() {
     let mut radio = Radio::new_rpi().unwrap();
     let mut radio2 = Radio::new_rpi().unwrap();
@@ -89,8 +96,17 @@ fn run_async_coms() {
     }
 }
 
-fn run_cmd_int() {
+#[cfg(any(linux))]
+fn tx(msg: &str, delay_ms: u64) {
     let mut radio = Radio::new_rpi().unwrap();
+    loop {
+        radio.transmit(msg.as_bytes()).expect("tx failure");
+
+        thread::sleep(Duration::from_millis(delay_ms))
+    }
+}
+
+fn run_cmd_int(radio: &mut Radio) {
     loop {
         match input!("w or r: ").as_str() {
             "w" => {
@@ -107,26 +123,25 @@ fn run_cmd_int() {
 
                 println!("got packet \"{}\"", s);
             },
+            "144" => {
+                radio.set_frequency(144e6).expect("error");
+            }
             _ => {},
         }
     }
 }
 
-fn tx(msg: &str, delay_ms: u64) {
-    let mut radio = Radio::new_rpi().unwrap();
-    loop {
-        radio.transmit(msg.as_bytes()).expect("tx failure");
-
-        thread::sleep(Duration::from_millis(delay_ms))
-    }
-}
 
 fn main() {
     //run_async_coms();
-    run_cmd_int();
+    //run_cmd_int();
     //tx("test beacon msg", 100);
+    
+    //let mut radio = Radio::new_rpi().unwrap();
+    let mut radio = Radio::new("COM4").unwrap();
 
-    let mut radio = Radio::new_rpi().unwrap();
+    
+    run_cmd_int(&mut radio);
 
     //radio.set_frequency(101.1).expect("error");
     //radio.set_power(101.1).expect("error");
