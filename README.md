@@ -2,9 +2,7 @@
 Libraries for interfacring with Armstrong Labs CC1200 based radios
 
 ## Purpose
-ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled CC1200 radios
-
-an STM32 wired to a CC1200 chip, and flashed with the following [code](https://github.com/explosion33/CC1200stm32) will be able to be controlled by
+ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled CC1200 radios. An STM32 wired to a CC1200 chip, and flashed with the following [code](https://github.com/explosion33/CC1200stm32) will be able to be controlled by
 * any linux device over I2C or SPI
 * any device over serial
 
