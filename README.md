@@ -22,3 +22,41 @@ ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled C
 
 ## Design
 [Latest design specifications](https://ethana.notion.site/CC1200-Radio-06d342126b2041b483d045ed1dcfd178)
+
+
+## Use
+I2C (Linux)
+```
+use ArmlabRadio::radio_i2c::Radio;
+
+fn main () {
+    let mut radio: Radio = Radio::new_rpi().unrwap();
+    
+    radio.transmit(b"test message");
+    let packet = radio.get_packet();
+
+    if packet == "" {
+        println!("no message recieved");
+    }
+
+    println!("got message: \"{}\"", packet);
+}
+```
+
+Serial
+```
+use ArmlabRadio::radio_serial::Radio;
+
+fn main () {
+    let mut radio: Radio = Radio::new("COM 4").unrwap();
+    
+    radio.transmit(b"test message");
+    let packet = radio.get_packet();
+
+    if packet == "" {
+        println!("no message recieved");
+    }
+
+    println!("got message: \"{}\"", packet);
+}
+```

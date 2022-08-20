@@ -1,6 +1,6 @@
 [package]
 name = "ArmlabRadio"
-version = "0.4.0"
+version = "0.4.2"
 edition = "2021"
 license = "MIT"
 description = "A library for interfacing with CC1200 Radios"
@@ -12,5 +12,3 @@ readme = "README.md"
 [dependencies]
 i2cdev = "0.3.2"
 serialport = {version = "4.0.2", default-features = false}
-
-radio = "0.4.0"
