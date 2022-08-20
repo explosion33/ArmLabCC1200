@@ -69,12 +69,13 @@ impl Radio {
             },
         };
 
+        /*
         if buf != IDENT_MSG.as_bytes() {
             for i in 0..IDENT_MSG.len() {
                 println!("{}, {}", buf[i], IDENT_MSG.as_bytes()[i]);
             }
             return false;
-        }
+        } */
 
         return true;
     }
@@ -136,6 +137,7 @@ impl Radio {
             Err(_) => {return Err(RadioError::WriteError)},
         };
 
+        /*
         let mut buf: [u8; 100] = [0; 100];
 
         self.port.read(&mut buf);
@@ -147,17 +149,24 @@ impl Radio {
             print!("{} ", val);
         }
         println!();
+        */
 
         Ok(())
     }
 
     pub fn get_packet(&mut self) -> Result<Vec<u8>, RadioError> {
         let cmd: [u8; 5] = [0x2, 0x0, 0x0, 0x0, 0x0];
-        self.write_bytes(&cmd).unwrap();
+        match self.write_bytes(&cmd) {
+            Ok(_) => {},
+            Err(_) => {return Err(RadioError::WriteError)},
+        };
 
         
         let mut buf: [u8; 1] = [0x0];
-        self.port.read_exact(&mut buf).unwrap();
+        match self.port.read_exact(&mut buf) {
+            Ok(_) => {},
+            Err(_) => {return Err(RadioError::ReadLenError)}
+        };
         let msg_size = buf[0] as usize;
 
         if msg_size == 0 {
@@ -166,7 +175,10 @@ impl Radio {
         
 
         let mut buf2: Box<[u8]> = vec![0; msg_size].into_boxed_slice();
-        self.port.read_exact(&mut buf2).unwrap();
+        match self.port.read_exact(&mut buf2) {
+            Ok(_) => {},
+            Err(_) => {return Err(RadioError::ReadError)},
+        };
 
         let mut out: Vec<u8> = Vec::new();
         out.extend_from_slice(&buf2);
