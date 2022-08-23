@@ -109,7 +109,7 @@ impl Radio {
             return Err(RadioError::InvalidArgument);
         }
 
-        let mut buf: [u8; 5] = [0x01, 0x00, 0x00, 0x00, 0x00];
+        let mut buf: [u8; 5] = [0x01, msg.len() as u8, 0x00, 0x00, 0x00];
         buf[1] = msg.len() as u8;
 
 
