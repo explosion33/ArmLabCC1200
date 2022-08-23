@@ -38,14 +38,10 @@ use ArmlabRadio::radio_i2c::Radio;
 fn main () {
     let mut radio: Radio = Radio::new_rpi().unrwap();
     
-    radio.transmit(b"test message");
-    let packet = radio.get_packet();
+    radio.transmit(b"test message").expect("transmit error");
+    let packet = radio.get_packet().expect("read error");
 
-    if packet == "" {
-        println!("no message recieved");
-    }
-
-    println!("got message: \"{}\"", packet);
+    println!("got message: \"{:?}\"", packet);
 }
 ```
 
@@ -56,13 +52,9 @@ use ArmlabRadio::radio_serial::Radio;
 fn main () {
     let mut radio: Radio = Radio::new("COM 4").unrwap();
     
-    radio.transmit(b"test message");
-    let packet = radio.get_packet();
+    radio.transmit(b"test message").expect("transmit error");
+    let packet = radio.get_packet().expect("read error");
 
-    if packet == "" {
-        println!("no message recieved");
-    }
-
-    println!("got message: \"{}\"", packet);
+    println!("got message: \"{:?}\"", packet);
 }
 ```
