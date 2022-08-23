@@ -35,6 +35,7 @@ pub enum RadioError {
 pub struct Radio {
     pub i2c: I2c,
     packet_wait_delay: u64,
+    write_wait_delay: u64,
     
 }
 
@@ -60,14 +61,14 @@ impl Radio {
             }
         }
 
-        Ok(Radio { i2c, packet_wait_delay: 10 })
+        Ok(Radio { i2c, packet_wait_delay: 10, write_wait_delay: 10})
     }
 
     pub fn new_rpi() -> Result<Radio, RadioError> {
         return Radio::new("/dev/i2c-1")
     }
 
-    pub fn use_alt_address(&mut self, address: u16) -> Result<(), RadioError> {
+    pub fn use_alt_address(&mut self) -> Result<(), RadioError> {
         self.i2c = match I2c::new("/dev/i2c-1", BACKUP_ADDR) {
             Ok(n) => n,
             Err(_) => {
@@ -80,6 +81,10 @@ impl Radio {
 
     pub fn set_packet_gather_delay(&mut self, delay: u64) {
         self.packet_wait_delay = delay;
+    }
+
+    pub fn set_write_wait_delay(&mut self, delay: u64) {
+        self.write_wait_delay = delay;
     }
 
     fn check_for_device(i2c: &mut I2c) -> bool {
@@ -110,7 +115,6 @@ impl Radio {
         }
 
         let mut buf: [u8; 5] = [0x01, msg.len() as u8, 0x00, 0x00, 0x00];
-        buf[1] = msg.len() as u8;
 
 
         // transmit "transmit" signal 0x01 and number of bytes to expect
@@ -120,6 +124,8 @@ impl Radio {
                 return Err(RadioError::TransmitMsgLen);
             },
         };
+
+        thread::sleep(Duration::from_millis(self.write_wait_delay));
 
         // transmit message
         match self.i2c.write(&msg) {

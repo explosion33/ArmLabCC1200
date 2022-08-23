@@ -22,7 +22,7 @@ macro_rules! input {
 
 
 fn main() {
-    //let mut radio = Radio::new_rpi();
+    //let mut radio = Radio::new_rpi().expect("Error Creating Radio");
     let mut radio = Radio::new("COM3").expect("Error Creating Radio");
 
     loop {
