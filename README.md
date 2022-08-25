@@ -9,19 +9,21 @@ https://crates.io/crates/ArmlabRadio
 
 ## Purpose
 ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled CC1200 radios. An STM32 wired to a CC1200 chip, and flashed with the following [code](https://github.com/explosion33/CC1200stm32) will be able to be controlled by
-* any linux device over I2C or SPI
+* any linux device over I2C
 * any device over serial
 
 ## Whats Available
 * Rust source code to interface with the device over I2C on linux (radio_i2c.rs)
 * Rust source code to interface with the device over serial (radio_serial.rs)
-* Basic example (main.rs)
+* [Library](https://crates.io/crates/ArmlabRadio) published on crates.io
 * [stm32 source code](https://github.com/explosion33/CC1200stm32)
+* Commands to change basic radio settings
+* interactive command line [example](https://github.com/explosion33/ArmLabCC1200/blob/main/examples/terminal.rs)
+    * ```cargo run --example terminal```
+    * ```cargo run --features i2clib --example terminal```
 
 ## Whats Coming
 * More exposed features on the radio
-* SPI Interfacing options
-* Rust Library on crates.io
 * Platform independent library for Rust
 * Platform independent library for C / C++
 
