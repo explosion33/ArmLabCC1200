@@ -1,5 +1,5 @@
 //use ArmlabRadio::radio_i2c::{Radio, ModulationFormat};
-use ArmlabRadio::radio_serial::{Radio, ModulationFormat};
+use ArmlabRadio::radio_serial::{Radio, ModulationFormat, get_open_ports, get_radio_ports};
 
 
 macro_rules! input {
@@ -22,8 +22,54 @@ macro_rules! input {
 
 
 fn main() {
+    let mut radios = get_radio_ports().unwrap();
+    
+
+    let port: String = match radios.len() {
+        1 => {
+            println!("Found one radio on {}", radios[0]);
+            radios[0].clone()
+        }
+        0 | _ => {
+            if radios.len() == 0 {
+                println!("Radio could not be automatically detected");
+                radios = get_open_ports().unwrap();
+            }
+            else {
+                println!("Multiple radios detected");
+            }
+
+            println!("Please select a port: ");
+            let mut i: usize = 0;
+            for port in &radios {
+                println!("\t{}. {}", i, port);
+                i += 1;
+            }
+
+            loop {
+                let res = input!("> ");
+                
+                let val: usize = match res.parse::<usize>() {
+                    Ok(n) => n,
+                    Err(_) => {
+                        println!("Error \"{}\" is not a valid selection", res);
+                        continue;
+                    }
+                };
+
+                if val >= radios.len() {
+                    println!("Error \"{}\" is not a valid selection", res);
+                    continue;
+                }
+                break radios[val].clone();
+            }
+        }
+
+    };
+
+
     //let mut radio = Radio::new_rpi().expect("Error Creating Radio");
-    let mut radio = Radio::new("COM6").expect("Error Creating Radio");
+    let mut radio = Radio::new(&port).expect("Error Creating Radio");
 
     loop {
         match input!("> ").as_str() {

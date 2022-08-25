@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use serialport::SerialPort;
+use serialport::{SerialPort, available_ports};
 
-use std::time::Duration;
+use std::{time::Duration, vec};
 
 const IDENT_MSG: &str = "ArmLabCC1200";
 
@@ -24,6 +24,7 @@ pub enum RadioError {
     WriteError,
     WriteLenError,
     SyncTimeoutError,
+    PortDetectError,
 }
 
 pub struct Radio {
@@ -261,4 +262,39 @@ impl Radio {
 
         return Ok(());
     }
+}
+
+pub fn get_open_ports() -> Result<Vec<String>, RadioError> {
+    let res = match available_ports() {
+        Ok(n) => n,
+        Err(_) => return Err(RadioError::PortDetectError),
+    };
+
+    let mut out:Vec<String> = vec![];
+
+    for val in res {
+        out.push(val.port_name);
+    }
+    
+    return Ok(out);
+}
+
+pub fn get_radio_ports() -> Result<Vec<String>, RadioError> {
+    let mut out: Vec<String> = vec![];
+    let res = match available_ports() {
+        Ok(n) => n,
+        Err(_) => {return Err(RadioError::PortDetectError);},
+    };
+
+    for val in res {
+        let port = match val.port_type {
+            serialport::SerialPortType::UsbPort(p) => p,
+            _ => {continue;}
+        };
+
+        if port.vid == 0x3A3A && port.pid == 0x1 {
+            out.push(val.port_name);
+        }
+    }
+    return Ok(out);
 }
