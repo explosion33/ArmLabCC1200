@@ -23,7 +23,7 @@ macro_rules! input {
 
 fn main() {
     //let mut radio = Radio::new_rpi().expect("Error Creating Radio");
-    let mut radio = Radio::new("COM3").expect("Error Creating Radio");
+    let mut radio = Radio::new("COM6").expect("Error Creating Radio");
 
     loop {
         match input!("> ").as_str() {
@@ -44,7 +44,7 @@ fn main() {
                             Err(_) => println!("{:#?}", n),
                         };
                     },
-                    Err(_) => {println!("Error getting packet")},
+                    Err(n) => {println!("Error getting packet | {:?}", n)},
                 };
             }
             

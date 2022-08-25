@@ -23,6 +23,7 @@ pub enum RadioError {
     ReadError,
     WriteError,
     WriteLenError,
+    SyncTimeoutError,
 }
 
 pub struct Radio {
@@ -33,16 +34,25 @@ pub struct Radio {
 impl Radio {
     pub fn new(path: &str) -> Result<Radio, RadioError> {
         let mut port = match serialport::new(path, 115200)
-            .timeout(Duration::from_millis(500))
+            .timeout(Duration::from_millis(100))
             .open() {
                 Ok(n) => n,
                 Err(_) => {return Err(RadioError::PortOpenError)}
         };
 
+        port.write_data_terminal_ready(true).unwrap();
+
+
+        let i = Radio::sync_serial(&mut port, 6).expect("msg");
+
+        println!("synced radio, after {} bytes | device was {} steps ahead", i, 6-i);
 
         if !Radio::check_for_device(&mut port) {
             return Err(RadioError::DevciceDetectError);
         }
+
+        let i = Radio::sync_serial(&mut port, 6).expect("msg");
+        println!("synced radio, after {} bytes | device was {} steps ahead", i, 6-i);
 
         Ok(Radio {port})
     }
@@ -52,7 +62,6 @@ impl Radio {
     }
 
     fn check_for_device(port: &mut Box<dyn SerialPort>) -> bool {
-        Radio::clear_read(port);
         let cmd: [u8; 6] = [0,0,0,0,0, '\n' as u8];
         match port.write_all(&cmd) {
             Ok(_) => {},
@@ -80,17 +89,31 @@ impl Radio {
         return true;
     }
 
-    fn clear_read(port: &mut Box<dyn SerialPort>) -> bool {
-        match port.clear(serialport::ClearBuffer::Input) {
-            Ok(_) => {true},
-            Err(_) => {false},
-        }
-        
+    fn sync_serial(port: &mut Box<dyn SerialPort>, timeout_iter: usize) -> Result<usize, RadioError> {
+        let mut i: usize = 0;
+
+        loop {
+            i += 1;
+            match port.write_all(&[0]) {
+                Ok(_) => {},
+                Err(_) => {return Err(RadioError::WriteError);},
+            };
+            
+            let mut buf: [u8; IDENT_MSG.len()] = [0; IDENT_MSG.len()];
+            match port.read_exact(&mut buf) {
+                Ok(_) => {return Ok(i)},
+                Err(_) => {}
+            }
+
+            if i == timeout_iter {
+                return Err(RadioError::SyncTimeoutError);
+            }
     }
 
-    fn sync(&mut self) -> bool {
-        let res = Radio::clear_read(&mut self.port);
-        res
+    }
+
+    pub fn sync(&mut self, timeout_iter: usize) -> Result<usize, RadioError>  {
+        return Radio::sync_serial(&mut self.port, timeout_iter);
     }
 
 }
@@ -120,7 +143,6 @@ impl Radio {
     }
 
     pub fn transmit(&mut self, msg: &[u8]) -> Result<(), RadioError> {
-        self.sync();
         if msg.len() > u8::MAX as usize {
             return Err(RadioError::InvalidArgument);
         }
@@ -177,7 +199,8 @@ impl Radio {
         let mut buf2: Box<[u8]> = vec![0; msg_size].into_boxed_slice();
         match self.port.read_exact(&mut buf2) {
             Ok(_) => {},
-            Err(_) => {return Err(RadioError::ReadError)},
+            Err(_) => {
+                return Err(RadioError::ReadError)},
         };
 
         let mut out: Vec<u8> = Vec::new();
