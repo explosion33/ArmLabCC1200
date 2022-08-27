@@ -28,7 +28,6 @@ ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled C
 
 ## Whats Coming
 * More exposed features on the radio
-* Platform independent library for Rust
 * Platform independent library for C / C++
 
 
