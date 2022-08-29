@@ -28,7 +28,8 @@ pub enum RadioError {
 }
 
 pub struct Radio {
-    pub port: Box<dyn SerialPort>,
+    port: Box<dyn SerialPort>,
+    port_path: String,
 }
 
 // init
@@ -55,7 +56,24 @@ impl Radio {
         let i = Radio::sync_serial(&mut port, 6).expect("msg");
         println!("synced radio, after {} bytes | device was {} steps ahead", i, 6-i);
 
-        Ok(Radio {port})
+        Ok(Radio {port, port_path: path.to_string()})
+    }
+
+    pub fn new_bare(path: &str) -> Result<Radio, RadioError> {
+        let mut port = match serialport::new(path, 115200)
+            .timeout(Duration::from_millis(100))
+            .open() {
+                Ok(n) => n,
+                Err(_) => {return Err(RadioError::PortOpenError)}
+        };
+
+        match port.write_data_terminal_ready(true) {
+            Ok(_) => {},
+            Err(_) => {return Err(RadioError::WriteError)},
+        }
+
+
+        Ok(Radio {port, port_path: path.to_string()})
     }
 
     pub fn is_device_available(&mut self) -> bool {
@@ -208,6 +226,18 @@ impl Radio {
         out.extend_from_slice(&buf2);
 
         Ok(out)
+    }
+
+    pub fn radio_reset(&mut self) -> Result<(), RadioError> {
+        return self.write_bytes(&[9,0,0,0,0]);
+    }
+
+    pub fn soft_reset(&mut self) -> Result<(), RadioError> {
+        return self.write_bytes(&[10,0,0,0,0]);
+    }
+
+    pub fn reset(&mut self) -> Result<(), RadioError> {
+        Ok(())
     }
 }
 
