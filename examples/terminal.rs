@@ -1,3 +1,5 @@
+use std::{time::Duration, thread};
+
 //use ArmlabRadio::radio_i2c::{Radio, ModulationFormat};
 use ArmlabRadio::radio_serial::{Radio, ModulationFormat, get_open_ports, get_radio_ports};
 
@@ -204,6 +206,47 @@ fn main() {
                     Err(_) => {println!("Error setting value")},
                 };
             },
+
+            "rr" |
+            "radio reset" => {
+                match radio.radio_reset() {
+                    Ok(_) => {println!("sent radio reset command")},
+					Err(_) => {println!("Error sending command")},
+				};
+            },
+
+            "rs" |
+            "soft reset" => {
+                match radio.soft_reset() {
+                    Ok(_) => {
+                        println!("sent soft reset command, re-initializing");
+
+                        // drops old radio, which closes the serialport
+                        // continuously try to re-init port, windows / rust takes a while ~500ms
+                        // to re-detect port
+                        drop(radio);
+                        radio = loop {
+                            match Radio::new_bare(&port) {
+                                Ok(n) => {break n;},
+                                Err(_) => {},
+                            };
+
+                            thread::sleep(Duration::from_millis(50));
+                        };
+
+                        println!("reset radio, re-initialized serial coms");
+                    },
+					Err(_) => {println!("Error sending command")},
+				};
+            },
+
+            "rh" |
+            "hard reset" => {
+                match radio.reset() {
+                    Ok(_) => {println!("triggered hardware reset")},
+					Err(_) => {println!("Error performing reset")},
+				};
+            }
             
             "h" |
             "help" => {
@@ -216,6 +259,10 @@ fn main() {
                 println!("symbol rate (sr)\n\tsets the radios symbol rate for TX and RX");
                 println!("rx filter (rxf)\n\tsets the RX bandwith filter");
                 println!("modulation (m)\n\tsets the radios modulation format");
+
+                println!("radio reset (rr)\n\tattempts to reset the onboard CC1200 radio");
+                println!("soft reset (rs)\n\tattempts a software reset of the entire board");
+                println!("hard reset (rh)\n\tperforms a hard reset on the entire radio");
 
                 println!("help (h)\n\tshows available commands");
             }
