@@ -21,9 +21,8 @@ ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled C
 * interactive command line [example](https://github.com/explosion33/ArmLabCC1200/blob/main/examples/terminal.rs)
     * ```cargo run --example terminal```
     * ```cargo run --features i2clib --example terminal```
-* interactive continuous rx/tx  [example](https://github.com/explosion33/ArmLabCC1200/blob/main/examples/beacon.rs)
+* continuous rx/tx (serial only)  [example](https://github.com/explosion33/ArmLabCC1200/blob/main/examples/beacon.rs)
     * ```cargo run --example beacon```
-    * ```cargo run --features i2clib --example beacon```
 * Serial radio device, auto detection
 
 ## Whats Coming
