@@ -252,10 +252,15 @@ fn main() {
 
             "rh" |
             "hard reset" => {
-                match radio.reset() {
-                    Ok(_) => {println!("triggered hardware reset")},
-					Err(_) => {println!("Error performing reset")},
-				};
+                #[cfg(feature="i2clib")]
+                {
+                    match radio.reset() {
+                        Ok(_) => {println!("triggered hardware reset")},
+                        Err(_) => {println!("Error performing reset")},
+                    };
+                }
+                #[cfg(not(feature="i2clib"))]
+                println!("hard reset is not supported with serial")
             }
             
             "h" |
