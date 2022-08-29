@@ -28,12 +28,12 @@ ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled C
 
 ## Whats Coming
 * More exposed features on the radio
-* Platform independent library for Rust
 * Platform independent library for C / C++
 
 
 ## Design
-[Latest design specifications](https://ethana.notion.site/CC1200-Radio-06d342126b2041b483d045ed1dcfd178)
+
+view the [Latest design specifications](https://ethana.notion.site/CC1200-Radio-06d342126b2041b483d045ed1dcfd178), for an explanation on protocols, schematics, testing, and more
 
 
 ## Use
@@ -64,15 +64,3 @@ fn main () {
     println!("got message: \"{:?}\"", packet);
 }
 ```
-
-## Speed / Power
-### Serial <-> Serial Speed
-Using two radios positioned relatively close, one with a 8in whip antenna and the other with a 16in whip antenna I was able to achieve 60000 continuous transmissions containing  on average 13 bytes each at a rate of about 1000 packets in 15 seconds
-
-This leads to a transmit rate of ~7kbps, which would be improved using:
-
-* Faster communication methods (I2C)
-* Radio tuning for given antenna
-* Antennas matching transmit frequency
-* Sending more bytes per given message
-    * Reduces extra data communicated via serial for each send / recieve
