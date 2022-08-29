@@ -1,7 +1,6 @@
 #![allow(dead_code)]
 
 use std::{time::Duration, thread};
-use i2cdev::core::*;
 use i2cdev::linux::LinuxI2CDevice as I2c;
 
 const IDENT_MSG: &str = "ArmLabCC1200";
@@ -190,7 +189,7 @@ impl Radio {
                 return Err(RadioError::TransmitMsgLen);
             },
         };
-        Ok(());
+        Ok(())
     }
 
     pub fn soft_reset(&mut self) -> Result<(), RadioError> {
@@ -200,7 +199,7 @@ impl Radio {
                 return Err(RadioError::TransmitMsgLen);
             },
         };
-        Ok(());
+        Ok(())
     }
 
     pub fn reset(&mut self) -> Result<(), RadioError> {

@@ -1,6 +1,9 @@
 use std::{time::Duration, thread};
 
-//use ArmlabRadio::radio_i2c::{Radio, ModulationFormat};
+#[cfg(feature="i2clib")]
+use ArmlabRadio::radio_i2c::{Radio, ModulationFormat};
+
+#[cfg(not(feature="i2clib"))]
 use ArmlabRadio::radio_serial::{Radio, ModulationFormat, get_open_ports, get_radio_ports};
 
 
@@ -70,7 +73,9 @@ fn main() {
     };
 
 
-    //let mut radio = Radio::new_rpi().expect("Error Creating Radio");
+    #[cfg(feature="i2clib")]
+    let mut radio = Radio::new_rpi().expect("Error Creating Radio");
+    #[cfg(not(feature="i2clib"))]
     let mut radio = Radio::new(&port).expect("Error Creating Radio");
 
     loop {
@@ -224,7 +229,11 @@ fn main() {
                         // drops old radio, which closes the serialport
                         // continuously try to re-init port, windows / rust takes a while ~500ms
                         // to re-detect port
+                        #[cfg(not(feature="i2clib"))]
                         drop(radio);
+                        
+                        #[cfg(not(feature="i2clib"))]
+                        {
                         radio = loop {
                             match Radio::new_bare(&port) {
                                 Ok(n) => {break n;},
@@ -235,6 +244,7 @@ fn main() {
                         };
 
                         println!("reset radio, re-initialized serial coms");
+                        }
                     },
 					Err(_) => {println!("Error sending command")},
 				};
