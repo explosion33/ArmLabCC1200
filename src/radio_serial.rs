@@ -237,6 +237,7 @@ impl Radio {
     }
 
     pub fn reset(&mut self) -> Result<(), RadioError> {
+        println!("placeholder function, no action occured");
         Ok(())
     }
 }

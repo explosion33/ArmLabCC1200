@@ -183,6 +183,31 @@ impl Radio {
         Ok(out)
     }
 
+    pub fn radio_reset(&mut self) -> Result<(), RadioError> {
+        match self.i2c.write(&[9,0,0,0,0]) {
+            Ok(_) => {},
+            Err(_) => {
+                return Err(RadioError::TransmitMsgLen);
+            },
+        };
+        Ok(());
+    }
+
+    pub fn soft_reset(&mut self) -> Result<(), RadioError> {
+        match self.i2c.write(&[10,0,0,0,0]) {
+            Ok(_) => {},
+            Err(_) => {
+                return Err(RadioError::TransmitMsgLen);
+            },
+        };
+        Ok(());
+    }
+
+    pub fn reset(&mut self) -> Result<(), RadioError> {
+        println!("placeholder function, no action occured");
+        Ok(())
+    }
+
 }
 
 // change radio settings
