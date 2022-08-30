@@ -45,6 +45,7 @@ pub struct Radio {
     
 }
 
+// init
 impl Radio {    
     /// creates a new Radio object on the given i2c bus and checks
     /// that the device detected is a Radio device
@@ -139,7 +140,7 @@ impl Radio {
 
 }
 
-// transmit / recieve
+// transmit / recieve / reset
 impl Radio {
     /// transmits the given message
     pub fn transmit(&mut self, msg: &[u8]) -> Result<(), RadioError> {

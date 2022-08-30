@@ -59,23 +59,16 @@ impl Radio {
         };
 
 
-        let i = match Radio::sync_serial(&mut port, 6) {
-            Ok(n) => n,
-            Err(n) => {return Err(n);},
-        };
-
-        println!("synced radio, after {} bytes | device was {} steps ahead", i, 6-i);
-
         if !Radio::check_for_device(&mut port) {
             return Err(RadioError::DevciceDetectError);
         }
 
-        let i = match Radio::sync_serial(&mut port, 6) {
-            Ok(n) => n,
+        match Radio::sync_serial(&mut port, 6) {
+            Ok(n) => {println!("synced radio, after {} bytes | device was {} steps ahead", n, 6-n);},
             Err(n) => {return Err(n);},
         };
         
-        println!("synced radio, after {} bytes | device was {} steps ahead", i, 6-i);
+        
 
         Ok(Radio {port, port_path: path.to_string()})
     }
@@ -140,7 +133,7 @@ impl Radio {
             return false;
         } */
 
-        return true;
+        return IDENT_MSG.as_bytes() == buf;
     }
 
     /// ensures the command queue is in sync with the given port
