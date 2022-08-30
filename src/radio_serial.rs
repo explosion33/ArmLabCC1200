@@ -59,17 +59,16 @@ impl Radio {
         };
 
 
-        if !Radio::check_for_device(&mut port) {
-            return Err(RadioError::DevciceDetectError);
-        }
-
         match Radio::sync_serial(&mut port, 6) {
             Ok(n) => {println!("synced radio, after {} bytes | device was {} steps ahead", n, 6-n);},
             Err(n) => {return Err(n);},
         };
-        
-        
 
+        if !Radio::check_for_device(&mut port) {
+            return Err(RadioError::DevciceDetectError);
+        }
+        
+        
         Ok(Radio {port, port_path: path.to_string()})
     }
 
@@ -125,13 +124,13 @@ impl Radio {
             },
         };
 
-        /*
+        
         if buf != IDENT_MSG.as_bytes() {
             for i in 0..IDENT_MSG.len() {
                 println!("{}, {}", buf[i], IDENT_MSG.as_bytes()[i]);
             }
             return false;
-        } */
+        }
 
         return IDENT_MSG.as_bytes() == buf;
     }
