@@ -60,7 +60,7 @@ impl Radio {
 
 
         match Radio::sync_serial(&mut port, 6) {
-            Ok(n) => {println!("synced radio, after {} bytes | device was {} steps ahead", n, 6-n);},
+            Ok(n) => {println!("synced radio, after {} bytes | device was {} step(s) ahead", n, 6-n);},
             Err(n) => {return Err(n);},
         };
 
@@ -116,6 +116,22 @@ impl Radio {
             }
         };
 
+        // temp fix for bug with reading 0 at start of first read
+        // if ERROR | NOT IMPLEMENTED is thrown, add code to take
+        // the value read into buf and append it to the front of
+        // buf later (when checking the message contents match)
+        let mut buf: [u8; 1] = [0u8; 1];
+        match port.read_exact(&mut buf) {
+            Ok(_) => {
+                if buf[0] != 0 {
+                    panic!("ERROR | NOT IMPLEMENTED");
+                }
+            },
+            Err(_) => {
+                buf[0] = 0;
+            },
+        };
+
         let mut buf: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
         match port.read_exact(&mut buf) {
             Ok(_) => {},
@@ -129,7 +145,7 @@ impl Radio {
             for i in 0..IDENT_MSG.len() {
                 println!("{}, {}", buf[i], IDENT_MSG.as_bytes()[i]);
             }
-            return false;
+            return true;
         }
 
         return IDENT_MSG.as_bytes() == buf;
