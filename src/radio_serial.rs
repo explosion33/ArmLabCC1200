@@ -67,6 +67,7 @@ impl Radio {
         if !Radio::check_for_device(&mut port) {
             return Err(RadioError::DevciceDetectError);
         }
+        println!("found device");
         
         
         Ok(Radio {port, port_path: path.to_string()})
@@ -96,6 +97,11 @@ impl Radio {
     }
 
 
+    fn create_dynamic_buffer(size: usize) -> Box<[u8]> {
+        return vec![0; size].into_boxed_slice();
+    }
+
+
     /// queries the radio and checks if it is available
     /// 
     /// ## Returns
@@ -116,15 +122,20 @@ impl Radio {
             }
         };
 
-        // temp fix for bug with reading 0 at start of first read
-        // if ERROR | NOT IMPLEMENTED is thrown, add code to take
-        // the value read into buf and append it to the front of
-        // buf later (when checking the message contents match)
+        let mut size = IDENT_MSG.len();
+
+        // read a single value
+        // sometimes this value will be the first char in the ident message
+        // sometimes it will be 0
         let mut buf: [u8; 1] = [0u8; 1];
         match port.read_exact(&mut buf) {
             Ok(_) => {
                 if buf[0] != 0 {
-                    panic!("ERROR | NOT IMPLEMENTED");
+                    size -= 1;
+                    println!("read first byte as non 0")
+                }
+                else {
+                    println!("read extra 0");
                 }
             },
             Err(_) => {
@@ -132,23 +143,36 @@ impl Radio {
             },
         };
 
-        let mut buf: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
-        match port.read_exact(&mut buf) {
+        // create a dynamic buffer based on whether or not we read the actual value
+        // or a bad value
+        let mut buf2 = Radio::create_dynamic_buffer(size);
+        match port.read_exact(&mut buf2) {
             Ok(_) => {},
             Err(_) => {
                 return false
             },
         };
 
-        
-        if buf != IDENT_MSG.as_bytes() {
-            for i in 0..IDENT_MSG.len() {
-                println!("{}, {}", buf[i], IDENT_MSG.as_bytes()[i]);
-            }
-            return true;
+        let shift = IDENT_MSG.len()-size;
+
+        // merge the ident message into a new byte array
+        let mut buf3: [u8; IDENT_MSG.len()] = [0u8; IDENT_MSG.len()];
+        for i in shift..IDENT_MSG.len() {
+            buf3[i] = buf2[i - shift];
         }
 
-        return IDENT_MSG.as_bytes() == buf;
+        // fill the first byte with the byte from the correct read
+        if buf[0] != 0 {
+            buf3[0] = buf[0];
+        }
+        
+        if buf3 != IDENT_MSG.as_bytes() {
+            for i in 0..IDENT_MSG.len() {
+                println!("{}, {}", buf3[i], IDENT_MSG.as_bytes()[i]);
+            }
+        }
+
+        return IDENT_MSG.as_bytes() == buf3;
     }
 
     /// ensures the command queue is in sync with the given port
