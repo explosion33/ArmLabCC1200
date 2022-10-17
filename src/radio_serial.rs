@@ -428,9 +428,76 @@ pub fn get_radio_ports() -> Result<Vec<String>, RadioError> {
             _ => {continue;}
         };
 
-        if port.vid == 0x3A3A && port.pid == 0x1 {
+        if port.vid == 0x3A3A && (port.pid == 0x1 || port.pid == 0x2) {
             out.push(val.port_name);
         }
     }
     return Ok(out);
+}
+
+macro_rules! input {
+    {} => {{
+        input!("")
+    }};
+
+    ($a:expr) => {{
+        use std::io;
+        use std::io::Write;
+
+        print!("{}", $a);
+        let _ = io::stdout().flush();
+
+        let mut line = String::new();
+        io::stdin().read_line(&mut line).expect("Error reading from stdin");
+        line.trim().to_string()
+    }};
+}
+
+pub fn prompt_port() -> String{
+    let mut radios = get_radio_ports().expect("error getting devices");
+
+    let port: String = match radios.len() {
+        1 => {
+            println!("Found one radio on {}", radios[0]);
+            radios[0].clone()
+        }
+        0 | _ => {
+            if radios.len() == 0 {
+                println!("Radio could not be automatically detected");
+                radios = get_open_ports().unwrap();
+            }
+            else {
+                println!("Multiple radios detected");
+            }
+
+            println!("Please select a port: ");
+            let mut i: usize = 0;
+            for port in &radios {
+                println!("\t{}. {}", i, port);
+                i += 1;
+            }
+
+            loop {
+                let res = input!("> ");
+                
+                let val: usize = match res.parse::<usize>() {
+                    Ok(n) => n,
+                    Err(_) => {
+                        println!("Error \"{}\" is not a valid selection", res);
+                        continue;
+                    }
+                };
+
+                if val >= radios.len() {
+                    println!("Error \"{}\" is not a valid selection", res);
+                    continue;
+                }
+                break radios[val].clone();
+            }
+        }
+
+    };
+
+    return port;
+
 }
