@@ -17,6 +17,7 @@ ArmLabCC1200 contains a set of libraries for interfacing with STM32 controlled C
 * Rust source code to interface with the device over serial (radio_serial.rs)
 * [Library](https://crates.io/crates/ArmlabRadio) published on crates.io
 * [stm32 source code](https://github.com/explosion33/CC1200stm32)
+* [custom stm32 board schematic](https://github.com/explosion33/ArmLabRadio_PCB)
 * Commands to change basic radio settings
 * interactive command line [example](https://github.com/explosion33/ArmLabCC1200/blob/main/examples/terminal.rs)
     * ```cargo run --example terminal```
